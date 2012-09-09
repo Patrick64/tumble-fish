@@ -33,7 +33,7 @@ var Game = function(isMobile) {
 	this.c.style.height = this.viewportheight + 'px';
 	this.c.style.width = this.viewportwidth + 'px';
 	this.width = 400;
-	
+
 	var w20 = this.width / 20;
 	var w40 = this.width / 40;
 	var canvasHeight, canvasWidth;
@@ -45,9 +45,10 @@ var Game = function(isMobile) {
 		canvasWidth = this.viewportwidth;
 		canvasHeight = this.viewportheight;
 		this.height = this.viewportheight;
-		//this.height = (this.viewportheight / this.viewportwidth) * this.width;
+		// this.height = (this.viewportheight / this.viewportwidth) *
+		// this.width;
 	}
-	
+
 	this.c.setAttribute('width', canvasWidth);
 	this.c.setAttribute('height', canvasHeight);
 	var ctx = self.c.getContext("2d");
@@ -57,15 +58,20 @@ var Game = function(isMobile) {
 	var frameLapse = 0;
 	var levelComplete = true;
 	var playerDead = false;
-	var curLevIndex = 6;
+	var curLevIndex = 7;
 	var curLev = null;
 	var unit = 0;
 	var sec = 0;
 	var levelTime = 0;
-	var mouseOrigin = {x:0,y:0};
+	var mouseOrigin = {
+		x : 0,
+		y : 0
+	};
 	var LROrigin = 0;
 	var isMouseDown = false;
 	var cameraY = 0;
+	var pulse = 0;
+	var pulse2 = 0;
 	var gameData = [
 			{
 				wallMap : '\
@@ -165,7 +171,8 @@ var Game = function(isMobile) {
 			      ...........\
 			      ',
 				width : 11
-			}, {
+			},
+			{
 				wallMap : '\
 					.R_T__\
 					_R__R.\
@@ -184,24 +191,29 @@ var Game = function(isMobile) {
 					......\
       ',
 				width : 6
-			} ,
+			},
 			{
-				wallMap:'\
-					.....\
-					g_...\
-					.....\
-					.....\
-					..ss.\
+				wallMap : '\
+					_____\
 					.....\
 					.....\
-					...ss\
 					.....\
-					__...\
+					.Tcc.\
 					.....\
+					....S\
 					.....\
-					sssss\
+					...S.\
+					.....\
+					..S..\
+					.....\
+					.S...\
+					.....\
+					S..cc\
+					.....\
+					sscc.\
+					gR___\
 					',
-					itemMap:'\
+				itemMap : '\
 						.....\
 						.....\
 						.....\
@@ -211,78 +223,117 @@ var Game = function(isMobile) {
 						.....\
 						.....\
 						.....\
-						wp...\
 						.....\
+						.....\
+						.....\
+						.....\
+						.....\
+						p....\
 						.....\
 						.....\
 						',
-						width:5
-						
-			}];
+				width : 5
 
-	var swapWallMap = function(level,rx,swaps) {
-		level.wallMap = level.wallMap.replace(rx, function(m){
+			},
+			{
+				wallMap : '\
+					.........___\
+					ccccccc__r_.\
+					........|.|.\
+					........|.|.\
+					.cc...._R_I.\
+					..........|.\
+					s____.____I.\
+					_________..c\
+					_g__R_t_r__.\
+					',
+				itemMap : '\
+					............\
+					............\
+					............\
+					............\
+					.........p..\
+					............\
+					.........w..\
+					.....f......\
+					',
+				width : 12
+			} ];
+
+	var swapWallMap = function(level, rx, swaps) {
+		level.wallMap = level.wallMap.replace(rx, function(m) {
 			return swaps[m];
 		});
 	};
-	
+
 	var getMouseXY = function(e) {
-		var tempX,tempY;
+		var tempX, tempY;
 		if (e.targetTouches && e.targetTouches[0]) {
 			tempX = e.targetTouches[0].pageX;
 			tempY = e.targetTouches[0].pageY;
 		} else {
-			tempX =  e.pageX || e.clientX + document.body.scrollLeft;
+			tempX = e.pageX || e.clientX + document.body.scrollLeft;
 			tempY = e.pageY || e.clientY + document.body.scrollTop;
 		}
-    	return {x:tempX,y:tempY};
-    };
-	
-    this.setupEvents = function() {
-    	var i,m,obj;
-	if (isMobile) {
-		if (window.DeviceOrientationEvent) {
-			console.log("DeviceOrientation is supported");
-			window.addEventListener('deviceorientation', function(eventData) {
-				self.LR = eventData.gamma * sensitivity;
-				self.FB = eventData.beta;
-				self.DIR = eventData.alpha;
-				// deviceOrientationHandler(LR, FB, DIR);
-			}, false);
-		} else {
-			alert("Not supported on your device or browser.  Sorry.");
-		}
-		$('#myCanvas').addEventListener('touchstart',function(e) {
-			m = getMouseXY(e);
-			curLev.click(m.x*(app.width/app.viewportwidth)/unit,(m.y*(app.height/app.viewportheight)/unit)+cameraY);
-			//alert(self.level.items.length);
-			
-		});
-	}
-	else {
-		$('#myCanvas').addEventListener('mousedown',function(e) {
-			isMouseDown = true;
-			mouseOrigin = getMouseXY(e);
-			LROrigin = self.LR;
-		});
-		$('#myCanvas').addEventListener('mouseup',function(e) {
-			isMouseDown = false;
-		});
-		$('#myCanvas').addEventListener('mousemove',function(e) {
-			if (isMouseDown) {
-				var m = getMouseXY(e);
-				self.LR = LROrigin + (m.x-mouseOrigin.x)*0.2*sensitivity;
+		return {
+			x : tempX,
+			y : tempY
+		};
+	};
+
+	this.setupEvents = function() {
+		var i, m, obj;
+		if (isMobile) {
+			if (window.DeviceOrientationEvent) {
+				console.log("DeviceOrientation is supported");
+				window.addEventListener('deviceorientation',
+						function(eventData) {
+							self.LR = eventData.gamma * sensitivity;
+							self.FB = eventData.beta;
+							self.DIR = eventData.alpha;
+							// deviceOrientationHandler(LR, FB, DIR);
+						}, false);
+			} else {
+				alert("Not supported on your device or browser.  Sorry.");
 			}
-		});
-		$('#restart').style.display='block';
-		$('#restart').addEventListener('click',function(e) {
-			playerDead=true;
-		});
-		
-	}
-    };
-    this.setupEvents();
-	
+			$('#myCanvas').addEventListener(
+					'touchstart',
+					function(e) {
+						m = getMouseXY(e);
+						curLev.click(m.x * (app.width / app.viewportwidth)
+								/ unit, (m.y
+								* (app.height / app.viewportheight) / unit)
+								+ cameraY);
+						// alert(self.level.items.length);
+
+					});
+		} else {
+			$('#myCanvas').addEventListener('mousedown', function(e) {
+				isMouseDown = true;
+				mouseOrigin = getMouseXY(e);
+				LROrigin = self.LR;
+			});
+			$('#myCanvas').addEventListener('mouseup', function(e) {
+				isMouseDown = false;
+			});
+			$('#myCanvas').addEventListener(
+					'mousemove',
+					function(e) {
+						if (isMouseDown) {
+							var m = getMouseXY(e);
+							self.LR = LROrigin + (m.x - mouseOrigin.x) * 0.2
+									* sensitivity;
+						}
+					});
+			$('#restart').style.display = 'block';
+			$('#restart').addEventListener('click', function(e) {
+				playerDead = true;
+			});
+
+		}
+	};
+	this.setupEvents();
+
 	var Item = Class
 			.extend({
 				init : function(x, y, level, itemIndex) {
@@ -301,125 +352,160 @@ var Game = function(isMobile) {
 					this.active = true;
 					this.blockedLeft = false;
 					this.blockedRight = false;
+					this.isStatic = false;
 				},
 				process : function(sec) {
 
 					if (this.active) {
-						this.blockedRight = false;
-						this.blockedLeft = false;
-						this.newWall = false;
+						if (!this.isStatic) {
+							this.blockedRight = false;
+							this.blockedLeft = false;
+							this.newWall = false;
 
-						this.momentum.x = this.momentum.x
-								* (1 - (sec * 3 * this.friction));
-						this.momentum.x += (sec * (app.LR)) * this.tilt;
+							this.momentum.x = this.momentum.x
+									* (1 - (sec * 3 * this.friction));
+							this.momentum.x += (sec * (app.LR)) * this.tilt;
 
-						var mapX = Math.floor(this.x + 0.5);
-						var mapY = Math.floor(this.y + 0.5);
-						mapX = mapX < 0 ? 0
-								: mapX >= this.level.width ? this.level.width - 1
-										: mapX;
-						mapY = mapY < 0 ? 0 : mapY;
-						if (this.mapX != mapX || this.mapY != mapY)
-							this.newWall = true;
-						this.mapX = mapX;
-						this.mapY = mapY;
+							var mapX = Math.floor(this.x + 0.5);
+							var mapY = Math.floor(this.y + 0.5);
+							mapX = mapX < 0 ? 0
+									: mapX >= this.level.width ? this.level.width - 1
+											: mapX;
+							mapY = mapY < 0 ? 0 : mapY;
+							if (this.mapX != mapX || this.mapY != mapY)
+								this.newWall = true;
+							this.mapX = mapX;
+							this.mapY = mapY;
 
-						this.nearWall = '.';
-						if (this.level.wallMap[mapX + (mapY * this.level.width)]) {
-							this.nearWall = this.level.wallMap[mapX
-									+ (mapY * this.level.width)];
-						}
-						this.aboveWall = '.';
-						if (this.level.wallMap[mapX + ((mapY-1) * this.level.width)]) 
-							this.aboveWall = this.level.wallMap[mapX + ((mapY-1) * this.level.width)];
-							
-						if ('.|'.indexOf(this.nearWall) > -1)
-							this.momentum.y += sec * 40;
-						if (this.nearWall == 's' && this.momentum.y > 0)
-							this.momentum.y = -this.momentum.y * 1.2;
-						if ('_gIsTt'.indexOf(this.nearWall) !== -1) {
-							if (this.y >= mapY && this.momentum.y >= 0) {
-								this.y = mapY;
-								if (this.momentum.y > 10)
-									this.dropped(mapX, mapY);
-								this.momentum.y = 0;
-							} else {
+							this.nearWall = '.';
+							if (this.level.wallMap[mapX
+									+ (mapY * this.level.width)]) {
+								this.nearWall = this.level.wallMap[mapX
+										+ (mapY * this.level.width)];
+							}
+							this.aboveWall = '.';
+							if (this.level.wallMap[mapX
+									+ ((mapY - 1) * this.level.width)])
+								this.aboveWall = this.level.wallMap[mapX
+										+ ((mapY - 1) * this.level.width)];
+
+							if ('.|'.indexOf(this.nearWall) > -1)
 								this.momentum.y += sec * 40;
+							// spring
+							if ('Ss'.indexOf(this.nearWall) > -1
+									&& this.momentum.y > 5) {
+								this.momentum.y = (-this.momentum.y * 1.2) - 2;
+								if (this.momentum.y < -20)
+									this.momentum.y = -20;
 							}
-						}
-						if ('_gIsTt'.indexOf(this.aboveWall) !== -1) {
-							if (this.momentum.y<0 && this.y<mapY) {
-								this.momentum.y=0;
+							// ground
+							if ('_gIsTtRr'.indexOf(this.nearWall) !== -1) {
+								if (this.y >= mapY && this.momentum.y >= 0) {
+									this.y = mapY;
+									if (this.momentum.y > 10)
+										this.dropped(mapX, mapY);
+									this.momentum.y = 0;
+								} else {
+									this.momentum.y += sec * 40;
+								}
 							}
-						}
-						if ('I|R'.indexOf(this.nearWall) !== -1) {
+							// clouds
+							if ('Sc'.indexOf(this.nearWall) !== -1) {
+								if (this.y >= mapY && this.momentum.y >= 0) {
+									this.y = mapY;
+									this.momentum.y = 0;
+								} else {
+									this.momentum.y += sec * 40;
+								}
+							}
+							// roof
+							if ('_gIsTt'.indexOf(this.aboveWall) !== -1) {
+								if (this.momentum.y < 0 && this.y < mapY) {
+									this.momentum.y = 0;
+								}
+							}
+							// walls
+							if ('I|R'.indexOf(this.nearWall) !== -1) {
 
-							if (this.x < mapX && this.momentum.x > 0) {
-								this.blockedRight = true;
-								
-							} else if (this.x > mapX && this.momentum.x < 0) {
+								if (this.x < mapX && this.momentum.x > 0) {
+									this.blockedRight = true;
+
+								} else if (this.x > mapX && this.momentum.x < 0) {
+									this.blockedLeft = true;
+
+								}
+								if (this.x > mapX - 0.5 && this.x < mapX)
+									this.x = mapX - 0.5;
+								else if (this.x < mapX + 0.5 && this.x > mapX)
+									this.x = mapX + 0.5;
+
+							}
+
+							if (this.nearWall == 't' && this.newWall
+									&& this.momentum.x > 0) {
+								// @todo
+								swapWallMap(this.level, /[tTrR]/g, {
+									't' : 'T',
+									'T' : 't',
+									'r' : 'R',
+									'R' : 'r'
+								});
+								// var swap = {'t':'T','T':'t','r':'R','R':'r'};
+								// var rx= /[tTrR]/g;
+								// this.level.wallMap =
+								// this.level.wallMap.replace(
+								// 'r', 'R');
+								// this.level.wallMap =
+								// this.level.wallMap.replace(
+								// 't', 'T');
+							} else if (this.nearWall == 'T' && this.newWall
+									&& this.momentum.x < 0) {
+								// this.level.wallMap =
+								// this.level.wallMap.replace(
+								// 'R', 'r');
+								// this.level.wallMap =
+								// this.level.wallMap.replace(
+								// 'T', 't');
+								swapWallMap(this.level, /[tTrR]/g, {
+									't' : 'T',
+									'T' : 't',
+									'r' : 'R',
+									'R' : 'r'
+								});
+							}
+
+							if (this.x < 0)
 								this.blockedLeft = true;
-								
-							}
-							if (this.x>mapX-0.5 && this.x<mapX)
-								this.x=mapX-0.5;
-							else if (this.x<mapX+0.5 && this.x>mapX)
-								this.x=mapX+0.5;
-								
-								
+							if (this.x > this.level.width - 1)
+								this.blockedRight = true;
 						}
-						
-
-						if (this.nearWall == 't' && this.newWall
-								&& this.momentum.x > 0) {
-							// @todo
-							swapWallMap(this.level, /[tTrR]/g, {'t':'T','T':'t','r':'R','R':'r'});
-							//var swap = {'t':'T','T':'t','r':'R','R':'r'};
-							//var rx= /[tTrR]/g;
-							//this.level.wallMap = this.level.wallMap.replace(
-							//		'r', 'R');
-							//this.level.wallMap = this.level.wallMap.replace(
-							//		't', 'T');
-						} else if (this.nearWall == 'T' && this.newWall
-								&& this.momentum.x < 0) {
-							//this.level.wallMap = this.level.wallMap.replace(
-							//		'R', 'r');
-							//this.level.wallMap = this.level.wallMap.replace(
-							//		'T', 't');
-							swapWallMap(this.level, /[tTrR]/g, {'t':'T','T':'t','r':'R','R':'r'});
-						}
-
-						if (this.x < 0)
-							this.blockedLeft = true;
-						if (this.x > this.level.width - 1)
-							this.blockedRight = true;
 
 						for ( var i = 0; i < this.level.items.length; i++) {
 							if (i != this.itemIndex
 									&& this.level.items[i].active)
 								this.interact(this.level.items[i]);
 						}
+						if (!this.isStatic) {
+							if (this.blockedLeft && this.momentum.x < 0)
+								this.momentum.x = 0;
+							if (this.blockedRight && this.momentum.x > 0)
+								this.momentum.x = 0;
 
-						if (this.blockedLeft && this.momentum.x < 0)
-							this.momentum.x = 0;
-						if (this.blockedRight && this.momentum.x > 0)
-							this.momentum.x = 0;
+							if (this.momentum.y > 20)
+								this.momentum.y = 20;
+							if (this.momentum.x > 50)
+								this.momentum.x = 50;
+							if (this.momentum.x < -50)
+								this.momentum.x = -50;
 
-						if (this.momentum.y > 20)
-							this.momentum.y = 20;
-						if (this.momentum.x > 50)
-							this.momentum.x = 50;
-						if (this.momentum.x < -50)
-							this.momentum.x = -50;
+							if (this.x < -1)
+								this.x = this.level.width;
+							if (this.x > this.level.width + 1)
+								this.x = -1;
 
-						if (this.x < -1)
-							this.x = this.level.width;
-						if (this.x > this.level.width + 1)
-							this.x = -1;
-
-						this.x += this.momentum.x * sec;
-						this.y += this.momentum.y * sec;
-
+							this.x += this.momentum.x * sec;
+							this.y += this.momentum.y * sec;
+						}
 					}
 
 				},
@@ -464,7 +550,7 @@ var Game = function(isMobile) {
 
 			});
 
-	var shape = function(x, y, a, stroke, fill) {
+	var shape = function(x, y, a, stroke, fill, lineWidth) {
 		ctx.beginPath();
 		ctx.moveTo(x * unit, y * unit);
 		for ( var i = 0; i < a.length - 1; i = i + 2) {
@@ -475,7 +561,7 @@ var Game = function(isMobile) {
 			ctx.fill();
 		}
 		if (stroke) {
-			ctx.lineWidth = unit / 10;
+			ctx.lineWidth = lineWidth || unit / 10;
 			ctx.strokeStyle = stroke;
 			ctx.stroke();
 		}
@@ -501,8 +587,8 @@ var Game = function(isMobile) {
 			// goal!!
 			if (this.nearWall == 'g')
 				this.active = false;
-			if (this.y>this.level.height)
-				this.dying=true;
+			if (this.y > this.level.height)
+				this.dying = true;
 		},
 		draw : function() {
 			if (this.active) {
@@ -629,19 +715,53 @@ var Game = function(isMobile) {
 				}
 			});
 
+	var Fan = Item.extend({
+		init : function(x, y, level) {
+
+			this._super(x, y, level);
+			this.isStatic = true;
+			// this.friction = 2;
+		},
+
+		draw : function() {
+			if (this.active) {
+
+				// shape(this.x,this.y,[0.2,0.1, 0.8,0.1, 1,1, 0,1,
+				// 0.2,0.1],'#333','#888');
+				ctx.save();
+				ctx.translate((this.x + 0.5) * unit, (this.y + 0.5) * unit);
+				ctx.scale(1, 0.3);
+				ctx.rotate(pulse2 * Math.PI * 2);
+
+				shape(-0.5, 0, [ 1, 0 ], '#ff0', false, unit * 0.3);
+				shape(0, -0.5, [ 0, 1 ], '#ff0', false, unit * 0.3);
+				ctx.restore();
+			}
+		},
+		interact : function(obj) {
+			var dist = pyth(this.x, this.y, obj.x, obj.y);
+			if (!obj.isStatic && obj.x - this.x < 2 && obj.x - this.x > -2
+					&& dist < 5 && obj.y < this.y) {
+				obj.momentum.y -= sec * (40 + (5 - dist));
+			}
+		}
+	});
+
 	var Level = function(levelData) {
 		unit = app.width / levelData.width;
 		this.levelData = levelData;
 		this.width = levelData.width;
 		this.wallMap = levelData.wallMap.replace(/\s|\n/g, "");
 		var itemMap = levelData.itemMap.replace(/\s|\n/g, "");
-		this.height = Math.max(Math.floor(this.wallMap.length/this.width)+1,app.height/unit-1);
+		this.height = Math.max(
+				Math.floor(this.wallMap.length / this.width) + 1, app.height
+						/ unit - 1);
 		this.items = [];
-		cameraY=null;
+		cameraY = null;
 		var self = this;
 		if (!isMobile) {
 			app.LR = 0;
-			isMouseDown=false;
+			isMouseDown = false;
 		}
 		for ( var i = 0; i < itemMap.length; i++) {
 			x = i % levelData.width;
@@ -652,15 +772,17 @@ var Game = function(isMobile) {
 				this.items.push(new Bomb(x, y, this, i));
 			if (itemMap[i] == 'w')
 				this.items.push(new Weight(x, y, this, i));
+			if (itemMap[i] == 'f')
+				this.items.push(new Fan(x, y, this, i));
 
 		}
 
 		var x, y, wall;
 
 		this.processLevel = function(sec) {
-			
+
 			var activePlayers = 0;
-			var playerY =0;
+			var playerY = 0;
 			for ( var i = 0; i < this.items.length; i++) {
 				this.items[i].process(sec);
 				if (this.items[i] instanceof Player && this.items[i].active) {
@@ -670,22 +792,25 @@ var Game = function(isMobile) {
 			}
 			if (activePlayers == 0)
 				levelComplete = true;
-			if (cameraY == null) 
-				cameraY = (((playerY/activePlayers) - ((app.height/unit)/2)));
+			if (cameraY == null)
+				cameraY = (((playerY / activePlayers) - ((app.height / unit) / 2)));
 			else
-				cameraY += (((playerY/activePlayers) - ((app.height/unit)/2)) - cameraY) * sec;	
-			if (cameraY<0) cameraY=0;
-			if (cameraY>this.height-(app.height/unit)) cameraY=this.height-(app.height/unit);
+				cameraY += (((playerY / activePlayers) - ((app.height / unit) / 2)) - cameraY)
+						* sec;
+			if (cameraY < 0)
+				cameraY = 0;
+			if (cameraY > this.height - (app.height / unit))
+				cameraY = this.height - (app.height / unit);
 		}
 
 		this.drawLevel = function() {
-			ctx.lineWidth=unit/10;
-			var pulse = (new Date().getTime() % 2000) / 1000;
-			pulse = pulse > 1 ? pulse = 1 - (pulse - 1) : pulse;
+			ctx.lineWidth = unit / 10;
 			ctx.save();
-			ctx.translate(0,(-cameraY)*unit);
-			
-			
+			ctx.translate(0, (-cameraY) * unit);
+			pulse2 = (new Date().getTime() % 1000) / 1000;
+			pulse = (new Date().getTime() % 2000) / 1000;
+			pulse = pulse > 1 ? pulse = 1 - (pulse - 1) : pulse;
+
 			for ( var i = 0; i < self.wallMap.length; i++) {
 				x = i % levelData.width;
 				y = Math.floor(i / levelData.width);
@@ -704,20 +829,35 @@ var Game = function(isMobile) {
 					// ctx.fill();
 
 				}
-				if (wall == 's') {
+				if ('Ss'.indexOf(wall) > -1) {
 					shape(x + 0.5, y + 0.5, [ -0.45, 0, 0.45, 0, 0, 0, -0.3,
 							0.1, 0.3, 0.2, -0.3, 0.3, 0.3, 0.4, -0.3, 0.5 ]);
 					ctx.strokeStyle = "#f33";
 					ctx.stroke();
 				}
+
+				if ('Sc'.indexOf(wall) > -1) {
+					ctx.beginPath();
+					ctx.fillStyle = "rgba(255,255,255,0.7)"; // #8ED6FF";
+					ctx.arc((x + 0.2) * unit, (y + 1) * unit, unit * 0.2,
+							0 * Math.PI, 2 * Math.PI, false);
+					ctx.arc((x + 0.8) * unit, (y + 1) * unit, unit * 0.2,
+							0 * Math.PI, 2 * Math.PI, false);
+					ctx.arc((x + 0.5) * unit, (y + 0.9) * unit, unit * 0.3,
+							0 * Math.PI, 2 * Math.PI, false);
+					ctx.fill();
+				}
+
 				if (wall == 'R')
 					shape(x + 0.5, y, [ 0, 1 ], 'rgba(255,0,0,1)');
 				if (wall == 'r')
 					shape(x + 0.5, y, [ -0.5, 0.5 ], 'rgba(255,0,0,0.5)');
 				if (wall == 't')
-					shape(x + 0.5, y + 1, [ -0.25, -0.5, -0.35, -0.45  ], 'rgba(255,0,0,1)');
+					shape(x + 0.5, y + 1, [ -0.25, -0.5, -0.35, -0.45 ],
+							'rgba(255,0,0,1)');
 				if (wall == 'T')
-					shape(x + 0.5, y + 1, [ 0.25, -0.5, 0.15, -0.55 ], 'rgba(255,0,0,1)');
+					shape(x + 0.5, y + 1, [ 0.25, -0.5, 0.15, -0.55 ],
+							'rgba(255,0,0,1)');
 
 			}
 			for ( var i = 0; i < this.items.length; i++) {
@@ -725,18 +865,19 @@ var Game = function(isMobile) {
 			}
 			ctx.restore();
 		};
-		this.click = function(x,y) {
-			app.touchX=x;
-			app.touchY=y;
-			for (var i=0;i<this.items.length;i++) {
+		this.click = function(x, y) {
+			app.touchX = x;
+			app.touchY = y;
+			for ( var i = 0; i < this.items.length; i++) {
 				obj = this.items[i];
-				//ctx.arc(x,y,5*unit,2*Math.PI);
-				//ctx.fill();
-				
-				//alert(pyth(m.x*(app.width/app.viewportwidth)/unit,m.y*(app.width/app.viewportheight)/unit,obj.x,obj.y));
-				//alert(pyth(x,y,obj.x,obj.y));
-				if (obj instanceof Player && pyth(x,y,obj.x+0.5,obj.y+0.5)<1)
-					obj.dying=true;
+				// ctx.arc(x,y,5*unit,2*Math.PI);
+				// ctx.fill();
+
+				// alert(pyth(m.x*(app.width/app.viewportwidth)/unit,m.y*(app.width/app.viewportheight)/unit,obj.x,obj.y));
+				// alert(pyth(x,y,obj.x,obj.y));
+				if (obj instanceof Player
+						&& pyth(x, y, obj.x + 0.5, obj.y + 0.5) < 1)
+					obj.dying = true;
 			}
 		};
 	};
@@ -760,7 +901,7 @@ var Game = function(isMobile) {
 		}
 		sec = (frameLapse - i) / 1000;
 		curLev.processLevel((frameLapse - i) / 1000);
-		
+
 		self.setupCanvas();
 		self.drawBackground();
 		curLev.drawLevel();
@@ -772,35 +913,35 @@ var Game = function(isMobile) {
 		ctx.save();
 		ctx.globalCompositeOperation = 'source-over';
 		ctx.fillStyle = "#000";
-		//ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+		// ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 		ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 		if (!isMobile) {
-		ctx.translate((canvasWidth/2),canvasHeight/2);
-		ctx.rotate((self.LR * 1) * Math.PI / 180)
-		ctx.scale(0.9,0.9);
-		ctx.translate(-self.width/2,-canvasHeight/2);
-		ctx.fillStyle = "#000";
-	    ctx.fillRect(0,0,self.width,self.height);
-	    
-		ctx.globalCompositeOperation = 'source-atop';
-		
+			ctx.translate((canvasWidth / 2), canvasHeight / 2);
+			ctx.rotate((self.LR * 1) * Math.PI / 180)
+			ctx.scale(0.9, 0.9);
+			ctx.translate(-self.width / 2, -canvasHeight / 2);
+			ctx.fillStyle = "#000";
+			ctx.fillRect(0, 0, self.width, self.height);
+
+			ctx.globalCompositeOperation = 'source-atop';
+
 		}
 	};
-	
+
 	this.finishCanvas = function() {
 		ctx.globalCompositeOperation = 'source-over';
 		if (!isMobile) {
-			ctx.strokeStyle='#888';
-		    ctx.lineWidth=unit/5;
-		    ctx.strokeRect(-unit/10,-unit/10,self.width+unit/5,self.height+unit/5);
+			ctx.strokeStyle = '#888';
+			ctx.lineWidth = unit / 5;
+			ctx.strokeRect(-unit / 10, -unit / 10, self.width + unit / 5,
+					self.height + unit / 5);
 		}
 		ctx.restore();
 	}
-	
+
 	this.drawBackground = function() {
 		//
-		
-		
+
 		ctx.save();
 		ctx.translate(self.width / 2, 0);
 		ctx.rotate(-(self.LR * 1) * Math.PI / 180);
@@ -815,14 +956,13 @@ var Game = function(isMobile) {
 					self.width * 3, (22 / 256) * (self.height));
 		}
 		ctx.restore();
-		
-		//ctx.beginPath();
-		//ctx.arc(self.centerX, self.height*3.75, self.height*3, 0, 2 * Math.PI, false);
-		//ctx.fillStyle = "rgba(100,255,100,0.3);"; // #8ED6FF";
-		//ctx.fill();
-		
-		
-	};
 
+		// ctx.beginPath();
+		// ctx.arc(self.centerX, self.height*3.75, self.height*3, 0, 2 *
+		// Math.PI, false);
+		// ctx.fillStyle = "rgba(100,255,100,0.3);"; // #8ED6FF";
+		// ctx.fill();
+
+	};
 
 };
