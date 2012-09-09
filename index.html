@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" style="">
+<head>
+<meta charset="UTF-8">
+<title>Plummit</title>
+<style>
+html,body { background:#000; font-size:1em; color:#fff; text-align:center;height:100%;padding:0;margin:0;font-family: ‘Lucida Sans Unicode’, ‘Lucida Grande’, sans-serif; }
+a { background:#88f; padding:1em; margin:1em; display:block; color:#ff0; text-decoration:none;}
+#intro {max-width: 25em; margin:0 auto;}
+#restart { display:none; position:absolute; top:0; right:0; z-index:10;}
+p { color:#fff;}
+</style>
+<meta name="viewport" content=" initial-scale=1">
+</head>
+<body style="">
+  <div id="intro">
+  <h1>Plummit</h1>
+  <a href="#" onclick="go(true);"><strong>Mobile version (recommended) &raquo;</strong><br/>
+  <p>Tilt your mobile left/right to control. Tap the fishbowl to restart the level. Portrait mode only!</p></a>
+  <a href="#" onclick="go(false);"><strong>Desktop version (still good) &raquo;</strong>
+  <p>Drag level left/right with mouse. Click the button on top right of screen to restart level.</p></a>
+</div>
+	<input type="button" value="Restart level" id="restart"/>
+  <canvas id="myCanvas" style="display:none;" onclick="" ></canvas>
+  <audio  autobuffer="autobuffer" autoplay="autoplay" loop="loop" id="nosleep" >
+  
+    <source src="silent.wav"/>
+</audio>
+  <script type="text/javascript" src="class.js"></script>
+ <script type="text/javascript" src="plummit.js"></script>
+ 
+
+ 
+</body>
+</html>
