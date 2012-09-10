@@ -58,11 +58,11 @@ var Game = function(isMobile) {
 	var frameLapse = 0;
 	var levelComplete = true;
 	var playerDead = false;
-	var curLevIndex = -1;
+	var curLevIndex = 8;
 	var curLev = null;
 	var unit = 0;
 	var sec = 0;
-	var levelTime = 0;
+	//var levelStartTime = 0;
 	var mouseOrigin = {
 		x : 0,
 		y : 0
@@ -263,26 +263,46 @@ var Game = function(isMobile) {
 					.....f......\
 					',
 				width : 12
-			},
+			},{
+				wallMap:'\
+					._____.\
+					.grR_I.\
+					.......\
+					....ccc\
+					_...___\
+					t___rt.\
+					.......\
+					',
+				itemMap:'\
+					...w...\
+					....p..\
+					.....m.\
+					.......\
+					.......\
+					.......\
+					',
+					width:7
+				
+			},{},{},{},
 			{
 				wallMap : '\
-					...__...\
-					...||...\
-					...||...\
-					...||...\
-					...||...\
-					...||...\
-					___II___\
+					.........\
+					.........\
+					.|.|.|.|.\
+					.|.|.|.|.\
+					.|.|.|.|.\
+					.|.|.|.|.\
+					.|.|.|.|.\
+					sIsIsIsIs\
 					',
 				itemMap : '\
-					........\
-					........\
-					........\
-					.....p..\
-					ppp..ppp\
-					ppp..ppp\
+					........p\
+					......p..\
+					....p....\
+					..p......\
+					p........\
 					',
-				width : 8
+				width : 9
 			} ];
 
 	var swapWallMap = function(level, rx, swaps) {
@@ -331,16 +351,18 @@ var Game = function(isMobile) {
 								+ cameraY);
 						// alert(self.level.items.length);
 
-					});
+					},false);
 		} else {
 			$('#myCanvas').addEventListener('mousedown', function(e) {
 				isMouseDown = true;
 				mouseOrigin = getMouseXY(e);
 				LROrigin = self.LR;
-			});
+				e.stopPropagation(); 
+			},false);
 			$('#myCanvas').addEventListener('mouseup', function(e) {
 				isMouseDown = false;
-			});
+				e.stopPropagation();
+			},false);
 			$('#myCanvas').addEventListener(
 					'mousemove',
 					function(e) {
@@ -349,7 +371,8 @@ var Game = function(isMobile) {
 							self.LR = LROrigin + (m.x - mouseOrigin.x) * 0.2
 									* sensitivity;
 						}
-					});
+						e.stopPropagation();
+					},false);
 			$('#restart').style.display = 'block';
 			$('#restart').addEventListener('click', function(e) {
 				playerDead = true;
@@ -459,8 +482,8 @@ var Game = function(isMobile) {
 									this.blockedLeft = true;
 
 								}
-								if (this.x > mapX - 0.5 && this.x < mapX)
-									this.x = mapX - 0.5;
+								if (this.x >= mapX - 0.5 && this.x < mapX)
+									this.x = mapX - 0.51;
 								else if (this.x < mapX + 0.5 && this.x > mapX)
 									this.x = mapX + 0.5;
 
@@ -581,16 +604,31 @@ var Game = function(isMobile) {
 		for ( var i = 0; i < a.length - 1; i = i + 2) {
 			ctx.lineTo((x + a[i]) * unit, (y + a[i + 1]) * unit);
 		}
+		fillStroke(stroke,fill,lineWidth);
+	};
+	
+	var fillStroke = function(stroke,fill,lineWidth) {
 		if (fill) {
 			ctx.fillStyle = fill;
 			ctx.fill();
 		}
 		if (stroke) {
-			ctx.lineWidth = lineWidth || unit / 10;
+			ctx.lineWidth = lineWidth ? lineWidth * unit : unit / 10;
 			ctx.strokeStyle = stroke;
 			ctx.stroke();
 		}
-
+	};
+	
+	var circle = function(x, y, a, stroke, fill, lineWidth) {
+	ctx.beginPath();
+	for ( var i = 0; i < a.length ; i = i + 1) {
+	ctx.arc((a[i][0] + x) * unit,
+			(a[i][1] + y) * unit,
+			a[i][2] * unit,
+			a[i][3] * Math.PI * 2,
+			a[i][4] * Math.PI * 2);
+	}
+	fillStroke(stroke,fill,lineWidth);
 	};
 
 	var Player = Item.extend({
@@ -631,7 +669,10 @@ var Game = function(isMobile) {
 						false);
 				ctx.fillStyle = "rgba(1,1,255,0.7);"; // #8ED6FF";
 				ctx.fill();
-				ctx.translate(0,0.1*(pulse3*pulse3)*unit);
+				// fish
+				ctx.translate(0,(0.1*(pulse3*pulse3))*unit);
+				if (this.momentum.y>0)
+					ctx.translate(0,-this.momentum.y*unit*0.05);
 				if (this.momentum.x>0) 
 					ctx.scale(-0.5,0.2);
 				else
@@ -748,6 +789,60 @@ var Game = function(isMobile) {
 				}
 			});
 
+
+	var Monkey = Item
+			.extend({
+				init : function(x, y, level) {
+
+					this._super(x, y, level);
+					this.tilt=0;
+				},
+				draw : function() {
+					if (this.active) {
+						// legs
+						shape(this.x,this.y+1,[0.1,0,0.5,-0.5,0.9,0,1,0],'#CD6839');
+						
+
+						ctx.save();
+						ctx.translate((this.x + 0.5) * unit, (this.y + 0.5) * unit);
+						ctx.rotate(-(self.LR * 1) * Math.PI / 180);
+						// arms
+						shape(-0.5,-0.25,[0.5,0.25,1,0],'#CD6839');
+						ctx.beginPath();
+						// body						
+						ctx.arc(0, 0.2*unit, unit * 0.3, 0
+								* Math.PI, 2 * Math.PI,
+								false);
+						// head
+						ctx.arc(0, -0.25*unit, unit * 0.2, 0
+								* Math.PI, 2 * Math.PI,
+								false);
+						ctx.fillStyle = "#CD6839"; // #8ED6FF";
+						ctx.fill();
+						ctx.beginPath();
+						ctx.fillStyle = "#FF7D40"; // #8ED6FF";
+						ctx.arc(0, -0.25*unit, unit * 0.15, 0
+								* Math.PI, 2 * Math.PI,
+								false);
+						ctx.fill();
+						circle(0,0.2,[[0,0,0.2,0,2]],'#FF7D40');
+						circle(0,-0.3,[[-0.05,0,0.02,0,1],[0.05,0,0.02,0,1]],false,'#000');
+						circle(0,-0.2,[[0,0,0.05,0,1]],'#000',false,0.025);
+						
+						
+						ctx.restore();
+					}
+				},
+				pushAgainst : function(obj) {
+					if (obj instanceof Player
+							&& ((obj.blockedLeft && this.momentum.x < 0) || (obj.blockedRight && this.momentum.x > 0)))
+						obj.dying = true;
+					this._super(obj);
+
+				}
+			});
+
+	
 	var Fan = Item.extend({
 		init : function(x, y, level) {
 
@@ -786,6 +881,8 @@ var Game = function(isMobile) {
 		this.width = levelData.width;
 		this.wallMap = levelData.wallMap.replace(/\s|\n/g, "");
 		var itemMap = levelData.itemMap.replace(/\s|\n/g, "");
+		this.startTime = new Date().getTime();
+		this.runTime = 0;
 		this.height = Math.max(
 				Math.floor(this.wallMap.length / this.width) + 1, app.height
 						/ unit - 1);
@@ -807,6 +904,8 @@ var Game = function(isMobile) {
 				this.items.push(new Weight(x, y, this, i));
 			if (itemMap[i] == 'f')
 				this.items.push(new Fan(x, y, this, i));
+			if (itemMap[i] == 'm')
+				this.items.push(new Monkey(x, y, this, i));
 
 		}
 
@@ -816,6 +915,7 @@ var Game = function(isMobile) {
 
 			var activePlayers = 0;
 			var playerY = 0;
+			this.runTime = new Date().getTime() - this.startTime;
 			for ( var i = 0; i < this.items.length; i++) {
 				this.items[i].process(sec);
 				if (this.items[i] instanceof Player && this.items[i].active) {
@@ -899,6 +999,21 @@ var Game = function(isMobile) {
 				this.items[i].draw();
 			}
 			ctx.restore();
+			if (this.runTime<2000 || curLevIndex>=12) {
+				ctx.font = Math.floor(app.width/10) + "px ‘Lucida Sans Unicode’, ‘Lucida Grande’, sans-serif";
+				var alpha = 1;
+				if (this.runTime>1000 && curLevIndex<12)
+					alpha =(1 - (this.runTime%1000) / 1000);
+				ctx.fillStyle="rgba(255,100,0," + alpha  + ")";
+				if (curLevIndex<12)
+				ctx.fillText("Floor " + (13-curLevIndex), app.width*0.3325, app.height*(0.2+alpha*0.2));
+				else {
+					ctx.fillText("Ground Floor ", app.width*0.2, app.height*(0.1));
+					ctx.fillText("All fishes saved" , app.width*0.17, app.height*(0.8));
+					ctx.fillText("Game complete! " , app.width*0.15, app.height*(0.9));
+				}
+						
+			}
 		};
 		this.click = function(x, y) {
 			app.touchX = x;
@@ -961,6 +1076,7 @@ var Game = function(isMobile) {
 			ctx.globalCompositeOperation = 'source-atop';
 
 		}
+		 ctx.lineCap = 'round';
 	};
 
 	this.finishCanvas = function() {
