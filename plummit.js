@@ -58,7 +58,7 @@ var Game = function(isMobile) {
 	var frameLapse = 0;
 	var levelComplete = true;
 	var playerDead = false;
-	var curLevIndex = 7;
+	var curLevIndex = -1;
 	var curLev = null;
 	var unit = 0;
 	var sec = 0;
@@ -72,6 +72,7 @@ var Game = function(isMobile) {
 	var cameraY = 0;
 	var pulse = 0;
 	var pulse2 = 0;
+	var pulse3 = 0;
 	var gameData = [
 			{
 				wallMap : '\
@@ -97,7 +98,7 @@ var Game = function(isMobile) {
 			        .._.......\
 			        ..._......\
 			        ________g_\
-			        0000000000',
+			        ',
 				'itemMap' : '\
 			        p......p..\
 			        ....p.....\
@@ -126,11 +127,11 @@ var Game = function(isMobile) {
 			      I__..._.\
 			      |.__._I.\
 			      .__..|..\
-			      _.......\
-			      I__.._g_\
-			      |.|..|..\
-			      |.I__I..\
-			      I_IssI__\
+			      _...._g_\
+			      I___.|..\
+			      |..|.|..\
+			      |..I_I..\
+			      I_.IsI__\
 			      ',
 				itemMap : '\
 			      .....b..\
@@ -140,21 +141,25 @@ var Game = function(isMobile) {
 			},
 			{
 				wallMap : '\
-      ......._I\
-      .I_......\
-      .__......\
-      .__..._g.\
-      .___g____\
-      .........\
-      .........\
-      .ssssssss\
-      ',
+			      ..__.....\
+			      __..__...\
+			      .....I_g.\
+			      ________.\
+			      .......|.\
+					.......|.\
+					.......|s\
+					.......||\
+			      s.s.s.s||\
+				  IsIsIsIII\
+			      ',
 				itemMap : '\
-			      ..p....b.\
-			      .......g.\
-			      ..w......\
-			      ..w......\
-			      ..w......\
+					...b.....\
+					.........\
+					.........\
+					.........\
+					.........\
+					.........\
+					....p....\
 			      ',
 				width : 9
 			},
@@ -168,7 +173,7 @@ var Game = function(isMobile) {
       ',
 				itemMap : '\
 			      ..www.pww..\
-			      ...........\
+					...........\
 			      ',
 				width : 11
 			},
@@ -258,6 +263,26 @@ var Game = function(isMobile) {
 					.....f......\
 					',
 				width : 12
+			},
+			{
+				wallMap : '\
+					...__...\
+					...||...\
+					...||...\
+					...||...\
+					...||...\
+					...||...\
+					___II___\
+					',
+				itemMap : '\
+					........\
+					........\
+					........\
+					.....p..\
+					ppp..ppp\
+					ppp..ppp\
+					',
+				width : 8
 			} ];
 
 	var swapWallMap = function(level, rx, swaps) {
@@ -599,12 +624,20 @@ var Game = function(isMobile) {
 				ctx.translate((this.x + 0.5) * unit, (this.y + 0.5) * unit);
 				ctx.save();
 				ctx.rotate(-(self.LR * 1) * Math.PI / 180);
+				// water
 				ctx.beginPath();
 				ctx.arc(0, 0, unit / 2, (0.5 - (0.6 * this.deathAnim))
 						* Math.PI, (0.5 + (0.6 * this.deathAnim)) * Math.PI,
 						false);
 				ctx.fillStyle = "rgba(1,1,255,0.7);"; // #8ED6FF";
 				ctx.fill();
+				ctx.translate(0,0.1*(pulse3*pulse3)*unit);
+				if (this.momentum.x>0) 
+					ctx.scale(-0.5,0.2);
+				else
+					ctx.scale(0.5,0.2);	
+				
+				shape(-0.25,0,[0.2,-0.5, 0.6,0.3, 0.6,-0.3, 0.2,0.5, 0,0],false,'#FF6600');
 				ctx.restore();
 				ctx.beginPath();
 				ctx.arc(0, 0, unit / 2, -1, 1.3 * Math.PI, false);
@@ -617,8 +650,8 @@ var Game = function(isMobile) {
 					ctx.stroke();
 				}
 				ctx.restore();
-				ctx.font = "50px arial";
-				ctx.fillText(cameraY, 0, 50);
+				// ctx.font = "50px arial";
+				// ctx.fillText(cameraY, 0, 50);
 				// ctx.fillText(this.momentum.y, 0, 100);
 			}
 
@@ -808,6 +841,8 @@ var Game = function(isMobile) {
 			ctx.save();
 			ctx.translate(0, (-cameraY) * unit);
 			pulse2 = (new Date().getTime() % 1000) / 1000;
+			pulse3 = (new Date().getTime() % 4000) / 2000;
+			pulse3 = pulse3 > 1 ? pulse3 = 1 - (pulse3 - 1) : pulse3;
 			pulse = (new Date().getTime() % 2000) / 1000;
 			pulse = pulse > 1 ? pulse = 1 - (pulse - 1) : pulse;
 
