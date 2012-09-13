@@ -1,34 +1,45 @@
+// string replace util
 String.prototype.replaceAt = function(index, char) {
 	return this.substr(0, index) + char + this.substr(index + char.length);
 };
+// find element by id/class/tag
 var $ = function(a, b) {
 	a = a.match(/^(\W)?(.*)/);
 	return (b || document)["getElement"
 			+ (a[1] ? a[1] == "#" ? "ById" : "sByClassName" : "sByTagName")]
 			(a[2])
 };
-
+// start game
 function go(isMobile) {
-	var app = new Game(isMobile);
+	app = new Game(isMobile);
 }
-
+// main game object
 var Game = function(isMobile) {
+	// show canvas
 	$('#myCanvas').style.display = 'block';
+	// hide intro
 	$('#intro').style.display = 'none';
-	if (isMobile) $('#nosleep').play();
+	// play a silent .wav file on loop to prevent phone from sleeping
+	if (isMobile)
+		$('#nosleep').play();
 	var self = this;
 	var app = this;
+	// calc distance from one object to another
 	var pyth = function(x1, y1, x2, y2) {
 		return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 	};
+	// LR used for tilt
 	this.LR = 0;
 	this.FB = 0;
 	this.DIR = 0;
+	// maximum tilt amount
 	var maxTilt = 20;
+	// default frames/second
 	var fps = 30;
+	// sensitivity to tilting
 	var sensitivity = 0.5;
 	this.c = document.getElementById("myCanvas");
-
+	// make the canvas fill screen
 	this.viewportwidth = window.innerWidth;
 	this.viewportheight = window.innerHeight;
 	this.c.style.height = this.viewportheight + 'px';
@@ -38,16 +49,16 @@ var Game = function(isMobile) {
 	var w20 = this.width / 20;
 	var w40 = this.width / 40;
 	var canvasHeight, canvasWidth;
+	// if mobile the level fills the canvas
 	if (isMobile) {
 		canvasWidth = this.width;
 		canvasHeight = (this.viewportheight / this.viewportwidth) * this.width;
 		this.height = (this.viewportheight / this.viewportwidth) * this.width;
 	} else {
+		// if on desktop show level in a box
 		canvasWidth = this.viewportwidth;
 		canvasHeight = this.viewportheight;
 		this.height = this.viewportheight;
-		// this.height = (this.viewportheight / this.viewportwidth) *
-		// this.width;
 	}
 
 	this.c.setAttribute('width', canvasWidth);
@@ -57,23 +68,32 @@ var Game = function(isMobile) {
 	this.centerY = this.height / 2;
 	var lastFrameTime = new Date().getTime();
 	var frameLapse = 0;
+	// is level complete, if so go to next level
 	var levelComplete = true;
+	// is player dead
 	var playerDead = false;
-	var curLevIndex = 5;
+	// get current level from hash if it's there
+	var curLevIndex = isNaN(document.location.hash.replace('#', '')) ? -1
+			: document.location.hash.replace('#', '') - 2;
+	// current level object
 	var curLev = null;
 	var unit = 0;
 	var sec = 0;
-	// var levelStartTime = 0;
+	// for desktop remember position mouse started at
 	var mouseOrigin = {
 		x : 0,
 		y : 0
 	};
+	// origin LR position when mouse down
 	var LROrigin = 0;
 	var isMouseDown = false;
+	// camera y axis
 	var cameraY = 0;
+	// pulse used for animations
 	var pulse = 0;
 	var pulse2 = 0;
 	var pulse3 = 0;
+	// all level data. wallMap refers to static objects , itemMap to moving ones
 	var gameData = [
 
 			{
@@ -231,7 +251,7 @@ var Game = function(isMobile) {
       			      __._...|..\
 			      |..._..|..\
       			      |...._.|..\
-     			      I._____I__\
+     			      |._____I__\
       			      g_________\
       			      ',
 				itemMap : '\
@@ -268,7 +288,7 @@ var Game = function(isMobile) {
 					_....\
 					._...\
 					__.t_\
-					__s__\
+					_IsI_\
 				      ',
 				itemMap : '\
 					.....\
@@ -420,6 +440,32 @@ var Game = function(isMobile) {
 					',
 				width : 12
 			},
+
+			{
+				wallMap : '\
+					......R___\
+					T_r...|...\
+					......|...\
+					.c_._c__g_\
+					.._s_____.\
+					..........\
+					s________.\
+					_R________\
+					',
+				itemMap : '\
+					.........p\
+					..........\
+					..........\
+					..........\
+					..........\
+					..........\
+					.w........\
+					p.........\
+					.........f\
+					',
+				width : 10
+			},
+
 			{
 				wallMap : '\
 					._____.\
@@ -440,6 +486,74 @@ var Game = function(isMobile) {
 					',
 				width : 7
 
+			},
+
+			{
+				wallMap : '\
+					___________\
+					...........\
+					...........\
+					...........\
+					...........\
+					__...._____\
+					.R____.|...\
+					....IttI...\
+					.........__\
+					........cr.\
+					c........|.\
+					.........|.\
+					______T__Ig\
+				',
+				itemMap : '\
+					...........\
+					...........\
+					...........\
+					...........\
+					...........\
+					.......m..b\
+					..p........\
+					........f..\
+					...........\
+					...........\
+					...........\
+					...........\
+					...........\
+					...........\
+					.f..f...f..\
+					',
+				width : 11
+
+			},
+			{
+				wallMap : '\
+					..........\
+					..........\
+					.c........\
+					.|...cc...\
+					.|..sI..s.\
+					.|........\
+					.Is____s_.\
+					...I_R..Is\
+					ct.|.___..\
+					...|......\
+					gcc._.__.c\
+					..I_I_II_I\
+					',
+				itemMap : '\
+					..........\
+					..m....m..\
+					..........\
+					..........\
+					..........\
+					..........\
+					.....p....\
+					....p.....\
+					.....m.m..\
+					..........\
+					......m...\
+					..........\
+					',
+				width : 10
 			},
 			{
 				wallMap : '\
@@ -462,10 +576,27 @@ var Game = function(isMobile) {
 				width : 9
 			} ];
 
+	// swap array of characters in level
 	var swapWallMap = function(level, rx, swaps) {
 		level.wallMap = level.wallMap.replace(rx, function(m) {
 			return swaps[m];
 		});
+	};
+
+	// get current floor, taking into account half floors
+	var getFloor = function(lev, totalLev) {
+		var result = '';
+		if (lev > 11 - ((totalLev - 13) / 2))
+			result = (totalLev - 1 - lev) / 2;
+		else
+			result = (13 - lev);
+
+		if (result == 0.5)
+			return String.fromCharCode(189);
+		else
+			return Math.floor(result)
+					+ (result % 1 == 0.5 ? String.fromCharCode(189) : '');
+
 	};
 
 	var getMouseXY = function(e) {
@@ -483,44 +614,45 @@ var Game = function(isMobile) {
 		};
 	};
 
+	// setup events
 	this.setupEvents = function() {
 		var i, m, obj;
 		if (isMobile) {
+			// setup event to listen for tilting
 			if (window.DeviceOrientationEvent) {
-				console.log("DeviceOrientation is supported");
 				window.addEventListener('deviceorientation',
 						function(eventData) {
-							if (window.orientation == 90) 
-								self.LR = (eventData.beta ) * sensitivity;
-							else if (window.orientation == -90) 
-								self.LR = (-eventData.beta ) * sensitivity;
-							else 
+							if (window.orientation == 90)
+								self.LR = (eventData.beta) * sensitivity;
+							else if (window.orientation == -90)
+								self.LR = (-eventData.beta) * sensitivity;
+							else
 								self.LR = (eventData.gamma) * sensitivity;
-							if (self.LR>maxTilt)
-								self.LR=maxTilt;
-							if (self.LR<-maxTilt)
-								self.LR=-maxTilt;
-							//self.FB = eventData.beta;
-							//self.DIR = eventData.alpha;
-							// deviceOrientationHandler(LR, FB, DIR);
+							if (self.LR > maxTilt)
+								self.LR = maxTilt;
+							if (self.LR < -maxTilt)
+								self.LR = -maxTilt;
 						}, false);
 			} else {
 				alert("Not supported on your device or browser.  Sorry.");
 			}
+			// listen for touch events
 			$('#myCanvas').addEventListener(
 					'touchstart',
 					function(e) {
 						// prevent phone from sleeping
 						$('#nosleep').play();
 						m = getMouseXY(e);
+						// send click to level, will check if its over a
+						// fishbowl
 						curLev.click(m.x * (app.width / app.viewportwidth)
 								/ unit, (m.y
 								* (app.height / app.viewportheight) / unit)
 								+ cameraY);
-						// alert(self.level.items.length);
 
 					}, false);
 		} else {
+			// desktop browser, listen for mouse events
 			$('#myCanvas').addEventListener('mousedown', function(e) {
 				isMouseDown = true;
 				mouseOrigin = getMouseXY(e);
@@ -538,17 +670,17 @@ var Game = function(isMobile) {
 							var m = getMouseXY(e);
 							self.LR = LROrigin + (m.x - mouseOrigin.x) * 0.2
 									* sensitivity;
-							if (self.LR>maxTilt) {
-								self.LR=maxTilt;
+							if (self.LR > maxTilt) {
+								self.LR = maxTilt;
 								mouseOrigin = getMouseXY(e);
 								LROrigin = self.LR;
 							}
-							if (self.LR<-maxTilt) {
-								self.LR=-maxTilt;
+							if (self.LR < -maxTilt) {
+								self.LR = -maxTilt;
 								mouseOrigin = getMouseXY(e);
 								LROrigin = self.LR;
 							}
-							
+
 						}
 						e.stopPropagation();
 					}, false);
@@ -561,45 +693,54 @@ var Game = function(isMobile) {
 	};
 	this.setupEvents();
 
+	// Item class to be extended for objects in game
 	var Item = Class
 			.extend({
 				init : function(x, y, level, itemIndex) {
+					// record current momentum
 					this.momentum = {
 						x : 0,
 						y : 0
 					};
 					this.itemIndex = itemIndex;
 					this.level = level;
+					// closest wall item to be used for collission detection etc
 					this.nearWall = '';
 					this.aboveWall = '';
 					this.x = x;
 					this.y = y;
+					// how much it can tilt
 					this.tilt = 0.8;
+					// amount of friction on floor
 					this.friction = 1;
 					this.active = true;
+					// record blocking
 					this.blockedLeft = false;
 					this.blockedRight = false;
+					// is immovable
 					this.isStatic = false;
-					this.isSolid=true;
+					// is a solid object
+					this.isSolid = true;
 				},
 				process : function(sec) {
-
+					// process events for generic item
 					if (this.active) {
 						if (!this.isStatic) {
 							this.blockedRight = false;
 							this.blockedLeft = false;
 							this.newWall = false;
-							var positiveMomentumY = 0; //this.momentum.y<0 ? -this.momentum.y : this.momentum.y;
+							// tilt object based on level tilt
 							this.momentum.x = this.momentum.x
-									* (1 - (sec * 3 * this.friction * (1-positiveMomentumY*0.05)));
+									* (1 - (sec * 3 * this.friction));
 							this.momentum.x += (sec * (app.LR)) * this.tilt;
-
+							// work out closest wall item
 							var mapX = Math.floor(this.x + 0.5);
 							var mapY = Math.floor(this.y + 0.5);
 							mapX = mapX < 0 ? 0
 									: mapX >= this.level.width ? this.level.width - 1
 											: mapX;
 							mapY = mapY < 0 ? 0 : mapY;
+							// newWall if item just entered a new wall item
 							if (this.mapX != mapX || this.mapY != mapY)
 								this.newWall = true;
 							this.mapX = mapX;
@@ -611,25 +752,27 @@ var Game = function(isMobile) {
 								this.nearWall = this.level.wallMap[mapX
 										+ (mapY * this.level.width)];
 							}
+							// wall just above
 							this.aboveWall = '.';
 							if (this.level.wallMap[mapX
 									+ ((mapY - 1) * this.level.width)])
 								this.aboveWall = this.level.wallMap[mapX
 										+ ((mapY - 1) * this.level.width)];
-
+							// Empty space and vertical walls, fall down
 							if ('.|'.indexOf(this.nearWall) > -1)
 								this.momentum.y += sec * 40;
-							// spring
+							// springs bounce
 							if ('Ss'.indexOf(this.nearWall) > -1
 									&& this.momentum.y > 5) {
 								this.momentum.y = (-this.momentum.y * 1.2) - 2;
 								if (this.momentum.y < -20)
 									this.momentum.y = -20;
 							}
-							// ground
+							// ground, stop item from falling
 							if ('_gIsTtRr'.indexOf(this.nearWall) !== -1) {
 								if (this.y >= mapY && this.momentum.y >= 0) {
 									this.y = mapY;
+									// if it lands hard register as dropped
 									if (this.momentum.y > 10)
 										this.dropped(mapX, mapY);
 									this.momentum.y = 0;
@@ -646,13 +789,13 @@ var Game = function(isMobile) {
 									this.momentum.y += sec * 40;
 								}
 							}
-							// roof
-							if ('_gIsTt'.indexOf(this.aboveWall) !== -1) {
+							// roof, can't bounce above
+							if ('_gIsTtRr'.indexOf(this.aboveWall) !== -1) {
 								if (this.momentum.y < 0 && this.y < mapY) {
 									this.momentum.y = 0;
 								}
 							}
-							// walls
+							// walls, can't move past them
 							if ('I|R'.indexOf(this.nearWall) !== -1) {
 
 								if (this.x < mapX && this.momentum.x > 0) {
@@ -662,39 +805,27 @@ var Game = function(isMobile) {
 									this.blockedLeft = true;
 
 								}
-								if (this.x >= mapX - 0.5 && this.x < mapX) 
+								if (this.x >= mapX - 0.5 && this.x < mapX)
 									this.x = mapX - 0.51;
 								else if (this.x < mapX + 0.5 && this.x > mapX)
 									this.x = mapX + 0.5;
-								
 
 							}
-
+							// if item hits a switch then switch all switches
+							// and doors on level
 							if (this.nearWall == 't' && this.newWall
 									&& this.momentum.x > 0) {
-								// @todo
+
 								swapWallMap(this.level, /[tTrR]/g, {
 									't' : 'T',
 									'T' : 't',
 									'r' : 'R',
 									'R' : 'r'
 								});
-								// var swap = {'t':'T','T':'t','r':'R','R':'r'};
-								// var rx= /[tTrR]/g;
-								// this.level.wallMap =
-								// this.level.wallMap.replace(
-								// 'r', 'R');
-								// this.level.wallMap =
-								// this.level.wallMap.replace(
-								// 't', 'T');
+
 							} else if (this.nearWall == 'T' && this.newWall
 									&& this.momentum.x < 0) {
-								// this.level.wallMap =
-								// this.level.wallMap.replace(
-								// 'R', 'r');
-								// this.level.wallMap =
-								// this.level.wallMap.replace(
-								// 'T', 't');
+
 								swapWallMap(this.level, /[tTrR]/g, {
 									't' : 'T',
 									'T' : 't',
@@ -708,12 +839,13 @@ var Game = function(isMobile) {
 							if (this.x > this.level.width - 1)
 								this.blockedRight = true;
 						}
-
+						// run through all items to see if they can interact
 						for ( var i = 0; i < this.level.items.length; i++) {
 							if (i != this.itemIndex
 									&& this.level.items[i].active)
 								this.interact(this.level.items[i]);
 						}
+						// move based on momentum
 						if (!this.isStatic) {
 							if (this.blockedLeft && this.momentum.x < 0)
 								this.momentum.x = 0;
@@ -726,7 +858,7 @@ var Game = function(isMobile) {
 								this.momentum.x = 50;
 							if (this.momentum.x < -50)
 								this.momentum.x = -50;
-
+							// dont allow off screen
 							if (this.x < -1)
 								this.x = this.level.width;
 							if (this.x > this.level.width + 1)
@@ -742,6 +874,7 @@ var Game = function(isMobile) {
 				draw : function() {
 
 				},
+				// if dropped on player game over
 				dropped : function(mapX, mapY, obj) {
 					if (obj instanceof Player)
 						obj.dying = true;
@@ -749,8 +882,10 @@ var Game = function(isMobile) {
 				interact : function(obj) {
 					this.avoid(obj);
 				},
+				// bump off other objects
 				avoid : function(obj) {
-					if (this.isSolid && obj.isSolid && pyth(this.x, this.y, obj.x, obj.y) < 0.95) {
+					if (this.isSolid && obj.isSolid
+							&& pyth(this.x, this.y, obj.x, obj.y) < 0.95) {
 						if (obj.y > this.y && this.momentum.y > 0) {
 							if (this.momentum.y > 10)
 								this.dropped(this.mapX, this.mapY, obj);
@@ -763,6 +898,7 @@ var Game = function(isMobile) {
 						}
 					}
 				},
+				// if something is pushed against item
 				pushAgainst : function(obj) {
 					if (this.y >= obj.y - 0.5) {
 						if (this.momentum.x < 0)
@@ -779,7 +915,7 @@ var Game = function(isMobile) {
 				}
 
 			});
-
+	// draw a shape
 	var shape = function(x, y, a, stroke, fill, lineWidth) {
 		ctx.beginPath();
 		ctx.moveTo(x * unit, y * unit);
@@ -800,7 +936,7 @@ var Game = function(isMobile) {
 			ctx.stroke();
 		}
 	};
-
+	// draw circles
 	var circle = function(x, y, a, stroke, fill, lineWidth) {
 		ctx.beginPath();
 		for ( var i = 0; i < a.length; i = i + 1) {
@@ -810,6 +946,7 @@ var Game = function(isMobile) {
 		fillStroke(stroke, fill, lineWidth);
 	};
 
+	// fishbowl item
 	var Player = Item.extend({
 		init : function(x, y, level) {
 			this.deathAnim = 1;
@@ -829,6 +966,7 @@ var Game = function(isMobile) {
 			// goal!!
 			if (this.nearWall == 'g')
 				this.active = false;
+			// fall off screen
 			if (this.y > this.level.height)
 				this.dying = true;
 		},
@@ -871,9 +1009,7 @@ var Game = function(isMobile) {
 					ctx.stroke();
 				}
 				ctx.restore();
-				// ctx.font = "50px arial";
-				// ctx.fillText(cameraY, 0, 50);
-				// ctx.fillText(this.momentum.y, 0, 100);
+
 			}
 
 		},
@@ -916,16 +1052,18 @@ var Game = function(isMobile) {
 		dropped : function(mapX, mapY, obj) {
 			var isLethal = false;
 			this._super(mapX, mapY, obj);
-			
+
 			var wall = this.level.wallMap[mapX + (mapY * this.level.width)];
-			if (wall == 'g' && !obj) isLethal=true; 
+			if (wall == 'g' && !obj)
+				isLethal = true;
 			this.level.wallMap = this.level.wallMap.replaceAt(mapX
 					+ (mapY * this.level.width), '.');
 			this.active = false;
-			this.level.items.push(new Explosion(this.x,this.y,this.level,isLethal));
+			this.level.items.push(new Explosion(this.x, this.y, this.level,
+					isLethal));
 			if (obj)
 				obj.dropped();
-		
+
 		}
 	});
 
@@ -1062,44 +1200,51 @@ var Game = function(isMobile) {
 		}
 	});
 
-	var Explosion = Item.extend({
-		init : function(x, y, level, isLethal) {
+	var Explosion = Item
+			.extend({
+				init : function(x, y, level, isLethal) {
 
-			this._super(x, y, level);
-			this.isStatic = true;
-			this.anim = 1;
-			this.isLethal = isLethal;
-			this.isSolid = false;
-		},
-		
-		process: function(sec) {
-			this.anim -= sec;
-			if (this.anim<=0) {
-				this.active=false;
-				if (this.isLethal)
-					playerDead=true;
-			}
-		},
+					this._super(x, y, level);
+					this.isStatic = true;
+					this.anim = 1;
+					this.isLethal = isLethal;
+					this.isSolid = false;
+				},
 
-		draw : function() {
-			if (this.active) {
+				process : function(sec) {
+					this.anim -= sec;
+					if (this.anim <= 0) {
+						this.active = false;
+						if (this.isLethal)
+							playerDead = true;
+					}
+				},
 
-				// shape(this.x,this.y,[0.2,0.1, 0.8,0.1, 1,1, 0,1,
-				// 0.2,0.1],'#333','#888');
-				if (this.anim>0.95) {
-					ctx.fillStyle='#fff';
-					ctx.fillRect(0,0,app.width*unit,this.level.height*unit);
+				draw : function() {
+					if (this.active) {
+
+						// shape(this.x,this.y,[0.2,0.1, 0.8,0.1, 1,1, 0,1,
+						// 0.2,0.1],'#333','#888');
+						if (this.anim > 0.95) {
+							ctx.fillStyle = '#fff';
+							ctx.fillRect(0, 0, app.width * unit,
+									this.level.height * unit);
+						}
+						circle(this.x, this.y + 1,
+								[ [ 0, 0, this.anim, 0, 1 ] ], false,
+								'rgba(255,255,255,0.5)');
+						circle(this.x, this.y + (this.anim * 2) - 1, [ [ -0.3,
+								-0.2, this.anim / 4, 0, 1 ] ], false,
+								'rgba(100,100,100,0.8)');
+						circle(this.x, this.y + (this.anim * 2) - 1, [ [ 0.3,
+								-0.3, this.anim / 2, 0, 1 ] ], false,
+								'rgba(100,100,100,0.5)');
+					}
+				},
+				interact : function(obj) {
 				}
-				circle(this.x,this.y+1,[[0,0,this.anim,0,1]],false,'rgba(255,255,255,0.5)');
-				circle(this.x,this.y+(this.anim*2)-1,[[-0.3,-0.2,this.anim/4,0,1]],false,'rgba(100,100,100,0.8)');
-				circle(this.x,this.y+(this.anim*2)-1,[[0.3,-0.3,this.anim/2,0,1]],false,'rgba(100,100,100,0.5)');
-			}
-		},
-		interact : function(obj) {
-		}
-	});
+			});
 
-	
 	var Level = function(levelData) {
 		unit = app.width / levelData.width;
 		this.levelData = levelData;
@@ -1233,11 +1378,12 @@ var Game = function(isMobile) {
 					alpha = (1 - (this.runTime % 1000) / 1000);
 				ctx.fillStyle = "rgba(255,100,0," + alpha + ")";
 				// if not last level
+
+				var floor = getFloor(curLevIndex, gameData.length);
+
 				if (curLevIndex < gameData.length - 1)
-					ctx.fillText("Floor "
-							+ ((gameData.length - curLevIndex - 1)),
-							app.width * 0.3325, app.height
-									* (0.2 + alpha * 0.2));
+					ctx.fillText("Floor " + floor, app.width * 0.3325,
+							app.height * (0.2 + alpha * 0.2));
 				else {
 					ctx.fillText("Ground Floor ", app.width * 0.2,
 							app.height * (0.1));
@@ -1254,11 +1400,6 @@ var Game = function(isMobile) {
 			app.touchY = y;
 			for ( var i = 0; i < this.items.length; i++) {
 				obj = this.items[i];
-				// ctx.arc(x,y,5*unit,2*Math.PI);
-				// ctx.fill();
-
-				// alert(pyth(m.x*(app.width/app.viewportwidth)/unit,m.y*(app.width/app.viewportheight)/unit,obj.x,obj.y));
-				// alert(pyth(x,y,obj.x,obj.y));
 				if (obj instanceof Player
 						&& pyth(x, y, obj.x + 0.5, obj.y + 0.5) < 1)
 					obj.dying = true;
@@ -1268,8 +1409,9 @@ var Game = function(isMobile) {
 
 	window.setInterval(function() {
 		var i;
-		if (levelComplete)
+		if (levelComplete) {
 			curLevIndex++;
+		}
 		if (levelComplete || playerDead) {
 			curLev = new Level(gameData[curLevIndex]);
 			levelComplete = false;
@@ -1336,17 +1478,10 @@ var Game = function(isMobile) {
 		for ( var i = 0; i < 255; i = i + 20) {
 			ctx.fillStyle = "rgb(" + ((255 - i) * 1) + "," + ((255 - i))
 					+ ",0)"; // .toString(16)+"0000";;
-			// ctx.fillRect(self.viewportwidth*0.1,0,self.LR,75);
 			ctx.fillRect(-self.width, (i / 256) * (self.height),
 					self.width * 3, (22 / 256) * (self.height));
 		}
 		ctx.restore();
-
-		// ctx.beginPath();
-		// ctx.arc(self.centerX, self.height*3.75, self.height*3, 0, 2 *
-		// Math.PI, false);
-		// ctx.fillStyle = "rgba(100,255,100,0.3);"; // #8ED6FF";
-		// ctx.fill();
 
 	};
 

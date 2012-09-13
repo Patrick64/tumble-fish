@@ -14,15 +14,19 @@ html,body {
 	margin: 0;
 	font-family: ‘Lucida Sans Unicode’, ‘Lucida Grande’, sans-serif;
 }
+button {
+font-size: 1em;
+font-family: ‘Lucida Sans Unicode’, ‘Lucida Grande’, sans-serif;
+}
 
 a {
 color: #ff0;
 }
 
-a strong {
+button strong {
 color: #ff0;
 }
-a p {
+button p {
 margin:0.5em 0;
 }
 
@@ -94,15 +98,15 @@ p {
 	<div id="intro">
 		<h1>Tumble Fish</h1>
 		<p>You're Jim Bob the pet shop owner. Your arch nemesis, Bob Jim
-			hid all your prize goldfish in a giant tower. You must shake them all
+			hid all your prize goldfish in a giant tower. You must shake them
 			down all 13 floors without breaking the fish bowls.
 		</p>
 		<p>Game by <a href="https://github.com/Patrick64">Patrick Woodcock</a>. Level design by Edward Mullins. This is an entry for the <a href="http://js13kgames.com/">Js13kGames</a> contest. </p>
-		<a href="#" onclick="go(true);" class="shiny-blue"><strong>Mobile version
+		<button onclick="go(true);" class="shiny-blue"><strong>Mobile version
 				(recommended) &raquo;</strong><br />
 			<p>Tilt your mobile left/right to control. Tap the fishbowl to
-				restart the level. Portrait mode only!</p></a> <a class="shiny-blue" href="#"
-			onclick="go(false);"><strong>Desktop version (still
+				restart the level. Portrait mode only!</p></a> <button class="shiny-blue"
+			onclick="go(false); return false;"><strong>Desktop version (still
 				good) &raquo;</strong>
 			<p>Drag level left/right with mouse. Click the button on top
 				right of screen to restart level.</p></a>
